@@ -1,0 +1,139 @@
+*&---------------------------------------------------------------------*
+*&  Include           YESTRUCTURAORG_MHP_F01
+*&---------------------------------------------------------------------*
+
+FORM get_org USING p_orgid_sup
+      p_orgid
+  VALUE(p_pos).
+  DATA: BEGIN OF lt_org OCCURS 0,
+    sobid LIKE hrp1001-sobid,
+    END OF lt_org.
+*EL DATO LD_OBJID
+  DATA ld_objid LIKE hrp1001-objid.
+*SE PASA DATO A DATO
+  gt_tabla-orgid_sup = p_orgid_sup.
+  gt_tabla-orgid = p_orgid.
+  gt_tabla-pos = p_pos.
+  APPEND gt_tabla.
+  ADD 1 TO p_pos.
+
+*COGER EL NIVEL DE POR DEBAJO DE LA ESTRUCTURA
+  SELECT sobid INTO TABLE lt_org FROM hrp1001
+  WHERE otype = 'O' "UNIDAD ORGANIZATIVA
+  AND objid = p_orgid
+    AND plvar = '01'
+    AND rsign = 'B'
+    AND relat = '002' "INFORMA (L) A
+    AND sclas = 'O' "UNIDAD ORGANIZATIVA
+    AND istat EQ '1'
+    AND begda LE sy-datum
+    AND endda GE sy-datum.
+
+  IF sy-subrc NE 0. "SY-SUBRC SIEMPRE DEVUELVE CERO A NO SE QUE HAYA  UN ERROR-- SI HAY UN ERROR QUE SALGA DIRECTAMENTE DEL PROGRAMA
+    EXIT.
+  ELSE.
+    LOOP AT lt_org.
+      MOVE lt_org-sobid TO ld_objid.
+
+            PERFORM print_alv.
+      "LE METEMOS LA RECURSION
+      PERFORM get_org USING p_orgid
+            ld_objid
+            p_pos.
+
+
+    ENDLOOP.
+  ENDIF.
+ENDFORM.
+
+
+
+
+*
+*  *&---------------------------------------------------------------------*
+*  *&      Form  crear_cabecera
+*  *&---------------------------------------------------------------------*
+*  *       text
+*  *---------------------------------------------------------------------*
+
+FORM crear_cabecera.
+
+  gl_header-titulo1 = 'Visualización por ALV'.
+  APPEND gl_header TO gt_header.
+
+  CLEAR gl_header.
+  CONCATENATE 'Usuario:' sy-uname INTO gl_header-titulo1 SEPARATED BY space. "NOS INDICA EL NOMBRE DEL USUARIO
+  APPEND gl_header TO gt_header.
+
+  WRITE sy-datum TO gl_header-titulo1 DD/MM/YYYY. "NOS PONE LA FECHA ACTUAL EN EL FORMATO QUE LE INDICAMOS
+  CONCATENATE 'Fecha Ejecución:' gl_header-titulo1 INTO gl_header-titulo1 SEPARATED BY space.
+  APPEND gl_header TO gt_header.
+
+  PERFORM set_header  TABLES gt_header USING ''.
+
+ENDFORM. "crear_cabecera
+
+
+
+
+*  *&---------------------------------------------------------------------*
+*  *&      Form  PRINT_ALV
+*  *&---------------------------------------------------------------------*
+*  *       text
+*  *----------------------------------------------------------------------*
+*  *  -->  p1        text
+*  *  <--  p2        text
+*  *----------------------------------------------------------------------*
+*
+
+FORM print_alv.
+
+*  ***Con esto se crea el objeto del ALV
+  PERFORM factory_alv.
+
+*  ***Con esto podemos agregar barra de herramienta propia al ALV
+*  *   PERFORM set_status_gui
+*  *                 USING
+*  *                     'STANDARD'.
+
+*  ***Se envian funciones por defecto al ALV
+  PERFORM set_functions
+               USING
+                  'X'.
+
+*  ***  Se agregan eventos al ALV como el del doble click
+*  lr_events = gr_table->get_event( ).
+*  CREATE OBJECT g_event_receiver.
+*  SET HANDLER g_event_receiver->on_double_click      FOR lr_events.
+
+*  ***Se asigna atributos especiales a las columnas del ALV
+  PERFORM asignar_atributos.
+
+*  ***Se crea la cabecera del ALV
+  PERFORM crear_cabecera.
+
+* ***con esto se asigna el layout por defecto del ALV
+**  lr_layout = gr_table->get_layout( ).
+*  *  lr_layout->set_initial_layout( p_layout ).
+*
+*  ***Se muestra el ALV
+  PERFORM display_grid
+                USING space.
+ENDFORM. " PRINT_ALV
+
+**&---------------------------------------------------------------------*
+* *&      Form  ASIGNAR_ATRIBUTOS
+* *&---------------------------------------------------------------------*
+* *       text
+* *----------------------------------------------------------------------*
+* *  -->  p1        text
+* *  <--  p2        text
+* *----------------------------------------------------------------------*
+
+FORM asignar_atributos .
+
+  PERFORM set_col_attb USING: 'ID_EMP' 'LTEXT' 'CARACT_CORTO'.
+  PERFORM set_col_attb USING: 'ID_EMP' 'MTEXT' 'CARACT_MEDIANO'.
+  PERFORM set_col_attb USING: 'ID_EMP' 'STEXT' 'CARACT_ESTE ES EL MAS GRANDE'.
+
+ENDFORM. " ASIGNAR_ATRIBUTOS
