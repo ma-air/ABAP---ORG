@@ -1,0 +1,20 @@
+*&---------------------------------------------------------------------*
+*&  Include           YESTRUCTURAORG_MHP_TOP
+*&---------------------------------------------------------------------*
+REPORT yestructuraorg_mhp.
+
+
+*NO HAY QUE PONER INFOTYPES PORQUE VAMOS A UTILZAR UNA TABLA ESTRUCTURAL
+DATA: BEGIN OF gt_tabla OCCURS 0,
+  orgid_sup LIKE hrp1001-objid, "ORG SUPERIOR
+  orgid LIKE hrp1001-objid, "ORG
+  pos TYPE i,
+  END OF gt_tabla.
+
+PARAMETERS p_orgid LIKE hrp1001-objid.
+
+
+*PARA EL ALV
+
+INCLUDE zisalv_table_top.
+INCLUDE zisalv_table_forms.
