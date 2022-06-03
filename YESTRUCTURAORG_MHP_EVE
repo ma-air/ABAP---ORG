@@ -24,3 +24,4 @@ PERFORM get_org USING space p_orgid 0. "ES UN FORM DE F01
 *&---------------------------------------------------------------------*
 
 END-OF-SELECTION.
+PERFORM print_alv.
